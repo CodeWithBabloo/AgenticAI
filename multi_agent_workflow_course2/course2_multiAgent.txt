@@ -1,0 +1,178 @@
+import json
+import xmltodict
+import os
+from git import Repo
+import subprocess
+import shutil
+
+# Load configuration with valid or sample credentials
+config_json = """
+{
+    "username": "CodeWithBabloo",
+    "personalAccessToken": "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",
+    "repositories": [
+        {
+            "repoUrl": "https://github.com/CodeWithBabloo/Dynamic-Rule-Validation-System.git",
+            "branches": [
+                {"baseBranch": "main", "featureBranch": "feature/update-pom"}
+            ],
+            "deleteBranches": ["feature/update-pom"],
+            "isService": false
+        }
+    ],
+    "pomUpdates": {
+        "properties": {
+            "lib-kris-common-utils.version": "1.9.0",
+            "quarkus.platform.version": "3.21.1",
+            "maven.compiler.source": "17",
+            "maven.compiler.target": "17"
+        },
+        "dependencies": [],
+        "plugins": []
+    },
+    "initialBranch": "main",
+    "version": "1.2.0"
+}
+"""
+config = json.loads(config_json)
+
+def execute_command(command, repo_dir):
+    try:
+        print(f"Executing command: {command} in {repo_dir}...")
+        result = subprocess.run(command, cwd=repo_dir, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        
+        stdout = result.stdout.decode()
+        stderr = result.stderr.decode()
+        
+        if result.returncode != 0:
+            return f"Error executing command:\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}"
+        else:
+            return f"Command executed successfully:\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}"
+    
+    except subprocess.CalledProcessError as e:
+        stdout = e.stdout.decode() if e.stdout else ""
+        stderr = e.stderr.decode() if e.stderr else ""
+        return f"Error executing command:\nSTDOUT:\n{stdout}\nSTDERR:\n{stderr}"
+    except Exception as e:
+        return f"An unexpected error occurred: {e}"
+
+class GitTool:
+    def _run(self, repo_url, local_dir, personal_access_token):
+        print(f"Cloning repository {repo_url} into {local_dir}...")
+        try:
+            if os.path.exists(local_dir):
+                print(f"Removing existing directory {local_dir}...")
+                shutil.rmtree(local_dir)
+            os.makedirs(os.path.dirname(local_dir) or '.', exist_ok=True)
+            
+            # Use personal access token directly in the clone URL
+            repo_token_url = f'https://{personal_access_token}@github.com/{repo_url.split("/")[-2]}/{repo_url.split("/")[-1]}'
+            
+            repo = Repo.clone_from(repo_token_url, local_dir)
+            return f"Successfully cloned {repo_url} into {local_dir}"
+        except Exception as e:
+            return f"Error cloning repository: {e}"
+
+    def commit_and_push(self, repo_dir, branch_name, personal_access_token):
+        print(f"Committing and pushing changes in {repo_dir} to branch {branch_name}...")
+        try:
+            repo = Repo(repo_dir)
+    
+            # Ensure we're on the correct branch or create it if it's missing
+            if branch_name not in repo.heads:
+                repo.git.checkout('HEAD', b=branch_name)
+            else:
+                repo.git.checkout(branch_name)
+            
+            repo.git.add(A=True)
+            repo.index.commit("Automated POM update and build")
+            
+            origin = repo.remote(name='origin')
+            token_url = f'https://x-access-token:{personal_access_token}@github.com/{config["username"]}/{origin.url.split("/")[-1]}'
+            origin.set_url(token_url)
+
+            origin.push(refspec=f'{branch_name}:{branch_name}')
+            return f"Successfully committed and pushed changes to {branch_name}"
+        except Exception as e:
+            return f"Error committing and pushing changes: {e}"
+
+class PomUpdateTool:
+    def _run(self, pom_path, pom_updates):
+        print(f"Updating POM file at {pom_path}...")
+        try:
+            with open(pom_path, 'r') as file:
+                xml_content = xmltodict.parse(file.read())
+            properties = xml_content['project']['properties']
+            properties.update(pom_updates['properties'])
+            with open(pom_path, 'w') as file:
+                file.write(xmltodict.unparse(xml_content, pretty=True))
+            return f"Successfully updated POM file at {pom_path}"
+        except Exception as e:
+            return f"Error updating POM file: {e}"
+
+class CommandExecutionTool:
+    def _run(self, command, repo_dir):
+        return execute_command(command, repo_dir)
+
+# Instantiate tools
+git_tool = GitTool()
+pom_update_tool = PomUpdateTool()
+command_execution_tool = CommandExecutionTool()
+
+def execute_agent_actions(config):
+    report = {"executed": [], "errors": []}
+    for repo_config in config['repositories']:
+        repo_report = {"repoUrl": repo_config['repoUrl'], "actions": []}
+
+        local_dir = os.path.join("D:/tmp", repo_config['repoUrl'].split('/')[-1].replace('.git', ''))
+
+        # Git Tool Action - Clone
+        git_clone_result = git_tool._run(
+            repo_url=repo_config['repoUrl'],
+            local_dir=local_dir,
+            personal_access_token=config['personalAccessToken']
+        )
+        repo_report['actions'].append({'GitTool_Clone': git_clone_result})
+
+        if "Successfully cloned" in git_clone_result:
+            # Pom Update Tool Action
+            pom_updates = config['pomUpdates']
+            pom_path = os.path.join(local_dir, 'pom.xml')
+            pom_result = pom_update_tool._run(
+                pom_path=pom_path,
+                pom_updates=pom_updates
+            )
+            repo_report['actions'].append({'PomUpdateTool': pom_result})
+
+            # Command Execution Tool Action - Build
+            command_result = command_execution_tool._run(
+                command="mvn clean",
+                repo_dir=local_dir
+            )
+            repo_report['actions'].append({'CommandExecutionTool_Build': command_result})
+
+            if "BUILD SUCCESS" in command_result:
+                # Git Tool Action - Commit and Push
+                commit_push_result = git_tool.commit_and_push(
+                    repo_dir=local_dir,
+                    branch_name=repo_config['branches'][0]['featureBranch'],
+                    personal_access_token=config['personalAccessToken']
+                )
+                repo_report['actions'].append({'GitTool_CommitAndPush': commit_push_result})
+            else:
+                repo_report['actions'].append({'GitTool_CommitAndPush': "Skipped due to build error"})
+        else:
+            repo_report['actions'].append({'CommandExecutionTool_Build': "Skipped due to cloning error"})
+            repo_report['actions'].append({'PomUpdateTool': "Skipped due to cloning error"})
+            repo_report['actions'].append({'GitTool_CommitAndPush': "Skipped due to cloning error"})
+
+        if any("Error" in str(action_result) for action_dict in repo_report['actions'] for action_result in action_dict.values()):
+            report["errors"].append(repo_report)
+        else:
+            report["executed"].append(repo_report)
+
+    return report
+
+# Generate and print the report
+report = execute_agent_actions(config)
+print(json.dumps(report, indent=2))

@@ -1,0 +1,20 @@
+!pip install gitpython xmltodict langgraph langchain_openai langchain-groq
+
+# Install Java Development Kit (JDK) if not already installed
+!apt-get update -q
+!apt-get install -y default-jdk
+
+# Download and Install Maven
+!wget https://downloads.apache.org/maven/maven-3/3.8.8/binaries/apache-maven-3.8.8-bin.tar.gz
+!tar -xzf apache-maven-3.8.8-bin.tar.gz
+!rm apache-maven-3.8.8-bin.tar.gz
+!mv apache-maven-3.8.8 /usr/local/apache-maven
+
+# Set environment variables for Maven
+import os
+os.environ['M2_HOME'] = '/usr/local/apache-maven'
+os.environ['MAVEN_HOME'] = '/usr/local/apache-maven'
+os.environ['PATH'] = f"{os.environ['PATH']}:/usr/local/apache-maven/bin"
+
+# Verify Maven installation
+!mvn -version
