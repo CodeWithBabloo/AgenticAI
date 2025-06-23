@@ -9,7 +9,7 @@ from langgraph.prebuilt import create_react_agent
 
 
 # Initialize OpenAI model
-model = ChatOpenAI(temperature=0, api_key="sk-pro*********************QHrtvM7", model="gpt-4o-mini")
+model = ChatOpenAI(temperature=0, api_key="**************************", model="gpt-4o-mini")
 
 !pip install -U duckduckgo-search
 

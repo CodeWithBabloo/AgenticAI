@@ -67,7 +67,7 @@ def add(a:int,b:int) -> int:
      
 
 from langchain_openai import ChatOpenAI
-llm = ChatOpenAI(temperature=0, api_key='sk-proj-************************QHrtvM7', model="gpt-4o-mini")
+llm = ChatOpenAI(temperature=0, api_key='*********************', model="gpt-4o-mini")
 
      
 
