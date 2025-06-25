@@ -1,0 +1,203 @@
+
+
+!pip install langgraph-supervisor langchain-groq
+
+from langchain_groq import ChatGroq
+
+from langgraph_supervisor import create_supervisor
+from langgraph.prebuilt import create_react_agent
+
+
+# Initialize OpenAI model
+model = ChatGroq(api_key='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', model='llama-3.1-8b-instant')
+
+!pip install -U duckduckgo-search
+
+!pip install langchain langchain_community langgraph
+
+from langchain_community.tools import DuckDuckGoSearchRun
+
+def search_duckduckgo(query: str):
+    """Searches DuckDuckGo using LangChain's DuckDuckGoSearchRun tool."""
+    search = DuckDuckGoSearchRun()
+    return search.invoke(query)
+
+# Example usage
+# result = search_duckduckgo("what are AI agent")
+# print(result)
+
+def add(a: float, b: float) -> float:
+    """Add two numbers."""
+    return a + b
+
+def multiply(a: float, b: float) -> float:
+    """Multiply two numbers."""
+    return a * b
+
+from langgraph_supervisor import create_supervisor
+from langgraph.prebuilt import create_react_agent
+
+math_agent = create_react_agent(
+    model=model,
+    tools=[add, multiply],
+    name="math_expert",
+    prompt="You are a math expert. Always use one tool at a time."
+)
+
+research_agent = create_react_agent(
+    model=model,
+    tools=[search_duckduckgo],
+    name="research_expert",
+    prompt="You are a world class researcher with access to web search. Do not do any math."
+)
+
+# Create supervisor workflow
+workflow = create_supervisor(
+    [research_agent, math_agent],
+    model=model,
+    prompt=(
+        "You are a team supervisor managing a research expert and a math expert. "
+        "For current events, use research_agent. "
+        "For math problems, use math_agent."
+    )
+)
+
+# Compile and run
+app = workflow.compile()
+
+result = app.invoke({
+    "messages": [
+        {
+            "role": "user",
+            "content": "what is quantum computing?"
+        }
+    ]
+})
+
+result
+
+{'messages': [HumanMessage(content='what is quantum computing?', additional_kwargs={}, response_metadata={}, id='df4517a2-0964-47e2-924d-fc7aed61e5ee'),
+  AIMessage(content='', additional_kwargs={'tool_calls': [{'id': 'call_wansmCLuYn85BZ0UPabmpLmV', 'function': {'arguments': '{}', 'name': 'transfer_to_research_expert'}, 'type': 'function'}], 'refusal': None}, response_metadata={'token_usage': {'completion_tokens': 15, 'prompt_tokens': 93, 'total_tokens': 108, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0}}, 'model_name': 'gpt-4o-mini-2024-07-18', 'system_fingerprint': 'fp_00428b782a', 'finish_reason': 'tool_calls', 'logprobs': None}, name='supervisor', id='run-082eb49c-ac8b-4719-9cdf-f257e7b54ef6-0', tool_calls=[{'name': 'transfer_to_research_expert', 'args': {}, 'id': 'call_wansmCLuYn85BZ0UPabmpLmV', 'type': 'tool_call'}], usage_metadata={'input_tokens': 93, 'output_tokens': 15, 'total_tokens': 108, 'input_token_details': {'audio': 0, 'cache_read': 0}, 'output_token_details': {'audio': 0, 'reasoning': 0}}),
+  ToolMessage(content='Successfully transferred to research_expert', name='transfer_to_research_expert', id='4d77575d-0cde-43cc-b2e7-fb9b2a535a40', tool_call_id='call_wansmCLuYn85BZ0UPabmpLmV'),
+  AIMessage(content='Quantum computing is a type of computing that utilizes the principles of quantum mechanics to process information. Unlike classical computers, which use bits as the smallest unit of data (where each bit can be either 0 or 1), quantum computers use qubits. A qubit can exist in multiple states simultaneously, thanks to phenomena such as superposition and entanglement.\n\nThis unique capability allows quantum computers to solve certain complex problems much faster than classical computers. Quantum computing is particularly promising for tasks that involve large datasets, optimization problems, and simulations of quantum systems. The field is still developing, with ongoing research into quantum algorithms, hardware, and applications across various industries.', additional_kwargs={'refusal': None}, response_metadata={'token_usage': {'completion_tokens': 133, 'prompt_tokens': 339, 'total_tokens': 472, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0}}, 'model_name': 'gpt-4o-mini-2024-07-18', 'system_fingerprint': 'fp_13eed4fce1', 'finish_reason': 'stop', 'logprobs': None}, name='research_expert', id='run-03bc2b26-4ad4-4663-bd54-c037365633af-0', usage_metadata={'input_tokens': 339, 'output_tokens': 133, 'total_tokens': 472, 'input_token_details': {'audio': 0, 'cache_read': 0}, 'output_token_details': {'audio': 0, 'reasoning': 0}}),
+  AIMessage(content='Transferring back to supervisor', additional_kwargs={}, response_metadata={}, name='research_expert', id='53dd4288-9f04-4394-a76b-f17833035c8f', tool_calls=[{'name': 'transfer_back_to_supervisor', 'args': {}, 'id': 'f7ba8fd4-ff8e-4196-b561-19b32627eea4', 'type': 'tool_call'}]),
+  ToolMessage(content='Successfully transferred back to supervisor', name='transfer_back_to_supervisor', id='4dc35b14-162c-4c52-b0ed-dca7eb03b860', tool_call_id='f7ba8fd4-ff8e-4196-b561-19b32627eea4'),
+  AIMessage(content='I have provided an overview of quantum computing. If you have any further questions or need more details, feel free to ask!', additional_kwargs={'refusal': None}, response_metadata={'token_usage': {'completion_tokens': 27, 'prompt_tokens': 314, 'total_tokens': 341, 'completion_tokens_details': {'accepted_prediction_tokens': 0, 'audio_tokens': 0, 'reasoning_tokens': 0, 'rejected_prediction_tokens': 0}, 'prompt_tokens_details': {'audio_tokens': 0, 'cached_tokens': 0}}, 'model_name': 'gpt-4o-mini-2024-07-18', 'system_fingerprint': 'fp_13eed4fce1', 'finish_reason': 'stop', 'logprobs': None}, name='supervisor', id='run-37a6d93c-9705-4781-b8b8-e10971488edb-0', usage_metadata={'input_tokens': 314, 'output_tokens': 27, 'total_tokens': 341, 'input_token_details': {'audio': 0, 'cache_read': 0}, 'output_token_details': {'audio': 0, 'reasoning': 0}})]}
+
+for m in result["messages"]:
+    m.pretty_print()
+
+================================ Human Message =================================
+
+what is quantum computing?
+================================== Ai Message ==================================
+Name: supervisor
+Tool Calls:
+  transfer_to_research_expert (call_wansmCLuYn85BZ0UPabmpLmV)
+ Call ID: call_wansmCLuYn85BZ0UPabmpLmV
+  Args:
+================================= Tool Message =================================
+Name: transfer_to_research_expert
+
+Successfully transferred to research_expert
+================================== Ai Message ==================================
+Name: research_expert
+
+Quantum computing is a type of computing that utilizes the principles of quantum mechanics to process information. Unlike classical computers, which use bits as the smallest unit of data (where each bit can be either 0 or 1), quantum computers use qubits. A qubit can exist in multiple states simultaneously, thanks to phenomena such as superposition and entanglement.
+
+This unique capability allows quantum computers to solve certain complex problems much faster than classical computers. Quantum computing is particularly promising for tasks that involve large datasets, optimization problems, and simulations of quantum systems. The field is still developing, with ongoing research into quantum algorithms, hardware, and applications across various industries.
+================================== Ai Message ==================================
+Name: research_expert
+
+Transferring back to supervisor
+Tool Calls:
+  transfer_back_to_supervisor (f7ba8fd4-ff8e-4196-b561-19b32627eea4)
+ Call ID: f7ba8fd4-ff8e-4196-b561-19b32627eea4
+  Args:
+================================= Tool Message =================================
+Name: transfer_back_to_supervisor
+
+Successfully transferred back to supervisor
+================================== Ai Message ==================================
+Name: supervisor
+
+I have provided an overview of quantum computing. If you have any further questions or need more details, feel free to ask!
+
+# Compile and run
+app = workflow.compile()
+result = app.invoke({
+    "messages": [
+        {
+            "role": "user",
+            "content": "what is the weather in delhi today. Multiply it by 2 and add 5"
+        }
+    ]
+})
+
+for m in result["messages"]:
+    m.pretty_print()
+
+================================ Human Message =================================
+
+what is the weather in delhi today. Multiply it by 2 and add 5
+================================== Ai Message ==================================
+Name: supervisor
+Tool Calls:
+  transfer_to_research_expert (call_AxW3KuprH0hwdYXz0bnH3T52)
+ Call ID: call_AxW3KuprH0hwdYXz0bnH3T52
+  Args:
+================================= Tool Message =================================
+Name: transfer_to_research_expert
+
+Successfully transferred to research_expert
+================================== Ai Message ==================================
+Name: research_expert
+
+Today in Delhi, the weather is warm and sunny with a current temperature of 13°C. The maximum temperature is expected to reach 26°C, while the minimum may drop to 10°C. There is no chance of rain in the morning, and winds are blowing at 5 km/h.
+================================== Ai Message ==================================
+Name: research_expert
+
+Transferring back to supervisor
+Tool Calls:
+  transfer_back_to_supervisor (df935c74-341d-41ab-826d-05fc0f69b588)
+ Call ID: df935c74-341d-41ab-826d-05fc0f69b588
+  Args:
+================================= Tool Message =================================
+Name: transfer_back_to_supervisor
+
+Successfully transferred back to supervisor
+================================== Ai Message ==================================
+Name: supervisor
+Tool Calls:
+  transfer_to_math_expert (call_BwHusv28pciiOrFlE6QouFvK)
+ Call ID: call_BwHusv28pciiOrFlE6QouFvK
+  Args:
+================================= Tool Message =================================
+Name: transfer_to_math_expert
+
+Successfully transferred to math_expert
+================================== Ai Message ==================================
+Name: math_expert
+
+The results are as follows:
+
+- Multiplying the temperature (13°C) by 2 gives you 26.
+- Adding 5 to the temperature (13°C) gives you 18.
+
+So, the final results are 26 and 18.
+================================== Ai Message ==================================
+Name: math_expert
+
+Transferring back to supervisor
+Tool Calls:
+  transfer_back_to_supervisor (ee1461a5-7156-49d8-9805-3c6d3f60a7e8)
+ Call ID: ee1461a5-7156-49d8-9805-3c6d3f60a7e8
+  Args:
+================================= Tool Message =================================
+Name: transfer_back_to_supervisor
+
+Successfully transferred back to supervisor
+================================== Ai Message ==================================
+Name: supervisor
+
+The current temperature in Delhi is 13°C. When you multiply it by 2, you get 26, and when you add 5, the result is 18.
