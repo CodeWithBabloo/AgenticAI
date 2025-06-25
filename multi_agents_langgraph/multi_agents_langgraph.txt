@@ -153,7 +153,7 @@ Successfully transferred to research_expert
 ================================== Ai Message ==================================
 Name: research_expert
 
-Today in Delhi, the weather is warm and sunny with a current temperature of 13캜. The maximum temperature is expected to reach 26캜, while the minimum may drop to 10캜. There is no chance of rain in the morning, and winds are blowing at 5 km/h.
+Today in Delhi, the weather is warm and sunny with a current temperature of 13째C. The maximum temperature is expected to reach 26째C, while the minimum may drop to 10째C. There is no chance of rain in the morning, and winds are blowing at 5 km/h.
 ================================== Ai Message ==================================
 Name: research_expert
 
@@ -181,8 +181,8 @@ Name: math_expert
 
 The results are as follows:
 
-- Multiplying the temperature (13캜) by 2 gives you 26.
-- Adding 5 to the temperature (13캜) gives you 18.
+- Multiplying the temperature (13째C) by 2 gives you 26.
+- Adding 5 to the temperature (13째C) gives you 18.
 
 So, the final results are 26 and 18.
 ================================== Ai Message ==================================
@@ -200,5 +200,5 @@ Successfully transferred back to supervisor
 ================================== Ai Message ==================================
 Name: supervisor
 
-The current temperature in Delhi is 13캜. When you multiply it by 2, you get 26, and when you add 5, the result is 18.
+The current temperature in Delhi is 13째C. When you multiply it by 2, you get 26, and when you add 5, the result is 18.
 
